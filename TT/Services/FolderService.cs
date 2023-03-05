@@ -30,24 +30,26 @@ namespace TT.Services
 			await _context.SaveChangesAsync();
 		}
 
-		public List<Folder> ImportFolders(IFormFile file, string path)
+		public async Task<List<Folder>> ImportFoldersAsync(IFormFile file, string path)
 		{
 			var lines = new List<string>();
-			var folders = new List<Folder>();
-			var separator = ',';
+			var importFolders = new List<Folder>();
+			var existingFolders = await _context.Folders.ToListAsync();
+
 			using (var stream = new StreamReader(file.OpenReadStream()))
 			{
 				while (stream.Peek() >= 0)
 				{
-					lines.Add(stream.ReadLine());
+					lines.Add(await stream.ReadLineAsync());
 				}
 			}
 
-			int separatorIndex;
 			foreach (var line in lines)
 			{
-				separatorIndex = line.IndexOf(separator);
-				var folderPath = line.Substring(separatorIndex + 1, line.Length - (separatorIndex + 1));
+				var splitedLine = line.Split(',', StringSplitOptions.RemoveEmptyEntries);
+				var folderName = splitedLine[0];
+				var folderPath = splitedLine[1];
+
 				if (folderPath.Length > 1)
 				{
 					folderPath = folderPath.Substring(1, folderPath.Length - 1);
@@ -56,17 +58,22 @@ namespace TT.Services
 				{
 					folderPath = string.Empty;
 				}
-				
-				folders.Add(new Folder
+
+				folderPath = path + folderPath;
+
+				if (existingFolders.FirstOrDefault(x => x.Name == folderName && x.Path == folderPath) is null)
 				{
-					Name = line.Substring(0, separatorIndex),
-					Path = path + folderPath
-				});
+					importFolders.Add(new Folder
+					{
+						Name = folderName,
+						Path = folderPath
+					});
+				}
 			}
-			return folders;
+			return importFolders;
 		}
 
-		public async Task ExportFolders(string currentFoldersPath)
+		public async Task ExportFoldersAsync(string currentFoldersPath)
 		{
 			var folders = await _context.Folders.Where(x => x.Path.StartsWith(currentFoldersPath)).ToListAsync();
 			var defaultFileName = "exportedCatalogs.txt";
@@ -75,7 +82,7 @@ namespace TT.Services
 			{
 				foreach (var folder in folders)
 				{
-					stream.WriteLine($"{folder.Name},{folder.Path}");
+					await stream.WriteLineAsync($"{folder.Name},{folder.Path}");
 				}
 			}
 		}

@@ -26,17 +26,17 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> ImportFolders(IFormFile formFile, string path)
+    public async Task<IActionResult> ImportFoldersAsync(IFormFile formFile, string path)
     {
-        var folders = _service.ImportFolders(formFile, path);
+        var folders = await _service.ImportFoldersAsync(formFile, path);
         await _service.AddFoldersAsync(folders);
         return Redirect(path);
     }
 
     [HttpPost]
-    public async Task<IActionResult> ExportFolders(string path)
+    public async Task<IActionResult> ExportFoldersAsync(string path)
     {
-        await _service.ExportFolders(path);
+        await _service.ExportFoldersAsync(path);
         return Redirect(path);
     }
 
