@@ -1,0 +1,52 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+    ViewBag.Path = Context.Request.Path;
+}
+@model IEnumerable<Folder>
+<style>
+    .forms {
+        width:40%;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        margin-top:200px;
+    }
+</style>
+<div>
+    @{
+        var folderNames = Context.Request.Path
+            .ToString()
+            .Split("/", StringSplitOptions.RemoveEmptyEntries)
+            .ToList(); ;
+
+        if (folderNames.Count < 1)
+        {
+            folderNames.Add("Root");
+        }
+
+        var name = folderNames[^1];
+        name = name.Replace("%20", " ");
+    }
+    <h3>"Folder" - @name</h3>
+    @foreach (var item in Model)
+        {
+            <div>
+                <a href="
+               @(Context.Request.Scheme +
+                "://" + Context.Request.Host +
+                Context.Request.Path + item.Name + "/")">@item.Name</a>
+            </div>
+        }
+</div>
+
+<div class="forms">
+    <form asp-action="ImportFolders" method="post" enctype="multipart/form-data">
+        <input name="formFile" type="file" />
+        <input name="path" type="hidden" value="@(Context.Request.Path.ToString().Replace("%20"," "))" />
+        <button class="btn btn-primary" type="submit">Import</button>
+    </form>
+    <form asp-action="ExportFolders" method="post">
+        <input name="path" type="hidden" value="@(Context.Request.Path.ToString().Replace("%20"," "))" />
+        <button class="btn btn-primary" type="submit">Export</button>
+    </form>
+</div>
